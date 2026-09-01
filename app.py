@@ -154,3 +154,57 @@ def metric_card(label: str, value: str) -> None:
         unsafe_allow_html=True,
     )
 
+
+def insight(text: str) -> None:
+    st.markdown(f'<div class="insight">{text}</div>', unsafe_allow_html=True)
+
+
+def sql_text(value: str) -> str:
+    return "'" + value.replace("'", "''") + "'"
+
+
+def sql_filter(years: list[int], months: list[str], cities: list[str]) -> str:
+    conditions = []
+    if years:
+        year_list = ", ".join(str(year) for year in years)
+        conditions.append(f"CAST(strftime('%Y', arrival_date) AS INTEGER) IN ({year_list})")
+    if months:
+        month_numbers = [MONTH_ORDER.index(month) + 1 for month in months]
+        month_list = ", ".join(f"'{month:02d}'" for month in month_numbers)
+        conditions.append(f"strftime('%m', arrival_date) IN ({month_list})")
+    if cities:
+        city_list = ", ".join(sql_text(city) for city in cities)
+        conditions.append(f"city IN ({city_list})")
+    clause = "WHERE " + " AND ".join(conditions) if conditions else ""
+    return clause
+
+
+def filter_frame(
+    df: pd.DataFrame, years: list[int], months: list[str], cities: list[str]
+) -> pd.DataFrame:
+    filtered = df.copy()
+    if years:
+        filtered = filtered[filtered["arrival_date"].dt.year.isin(years)]
+    if months:
+        filtered = filtered[filtered["month_name"].isin(months)]
+    if cities:
+        filtered = filtered[filtered["city"].isin(cities)]
+    return filtered
+
+
+def style_segment_table(df: pd.DataFrame):
+    high_cancel_idx = df["Cancellation Rate"].idxmax() if not df.empty else None
+    display = df.copy()
+    display["Cancellation Rate"] = display["Cancellation Rate"].map(lambda value: f"{value:.1f}%")
+    display["Average ADR"] = display["Average ADR"].fillna(0).map(lambda value: f"₹{value:,.2f}")
+    display["Revenue Contribution"] = display["Revenue Contribution"].map(format_money)
+
+    def highlight(row):
+        return [
+            "background-color: #FEF2F2; color: #991B1B; font-weight: 700;"
+            if row.name == high_cancel_idx
+            else ""
+            for _ in row
+        ]
+
+    return display.style.apply(highlight, axis=1)
