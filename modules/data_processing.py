@@ -80,6 +80,8 @@ def load_and_clean_data(csv_path: str | Path) -> pd.DataFrame:
 
     df["arrival_date"] = pd.to_datetime(df["check_in_date"], errors="coerce")
     df = df.dropna(subset=["arrival_date"]).copy()
+    if df.empty:
+        raise ValueError("The dataset contains no valid check-in dates to analyze.")
 
     df["hotel"] = df["hotel_name"]
     df["market_segment"] = df["segment"].str.replace("_", " ", regex=False)
