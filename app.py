@@ -130,7 +130,12 @@ def apply_styles() -> None:
 
 @st.cache_data(show_spinner="Cleaning hotel booking dataset...")
 def prepare_data() -> pd.DataFrame:
-    return load_and_clean_data(DATA_PATH)
+    try:
+        return load_and_clean_data(DATA_PATH)
+    except FileNotFoundError:
+        st.error("Guest booking data is not available yet.")
+        st.info(f"Add guestflow_cleaned_data.csv to: {DATA_PATH.parent}")
+        st.stop()
 
 
 @st.cache_resource(show_spinner="Building SQLite analytics database...")
