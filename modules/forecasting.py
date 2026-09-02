@@ -3,6 +3,8 @@ import pandas as pd
 
 
 def forecast_occupancy(monthly_trend: pd.DataFrame, periods: int = 4) -> pd.DataFrame:
+    if periods < 1:
+        raise ValueError("Forecast periods must be at least 1.")
     if monthly_trend.empty:
         return pd.DataFrame()
 
